@@ -55,6 +55,7 @@ app.get("/users/:code", (req, res) => {
 
 app.post("/users", (req, res) => {
   const {
+    id,
     access_code,
     car_id,
     owner_name,
@@ -64,26 +65,80 @@ app.post("/users", (req, res) => {
     contract_delivery_date,
   } = req.body;
 
-  const sql = `INSERT INTO sm_client_access (access_code, car_id, owner_name, car_unit_name, plate_number, incoming_date, contract_delivery_date) VALUES
-   ('${access_code}', '${car_id}', '${owner_name}', '${car_unit_name}', '${plate_number}', '${incoming_date}', '${contract_delivery_date}')`;
+  const sql = `INSERT INTO sm_client_access (id, access_code, car_id, owner_name, car_unit_name, plate_number, incoming_date, contract_delivery_date) VALUES
+   (NULL, '${access_code}', '${car_id}', '${owner_name}', '${car_unit_name}', '${plate_number}', '${incoming_date}', '${contract_delivery_date}')`;
 
   db.query(sql, (err, fields) => {
-
+    console.log(err)
     if (fields?.affectedRows) {
-      // isSuccess: fields.affectedRows,
-      // id: fields.insertId
-      response(200, null, "DATA SUCCESSFULLY ADDED!", "SUCCESS", res);
+      const data = {
+        isSuccess: fields.affectedRows,
+        id: fields.insertId,
+      };
+      response(200, null, data, "DATA SUCCESSFULLY ADDED!", res);
     } else {
-      response(500, null, "Invalid", "Error", res)
-      console.log("Tidak Valid")
-    } 
+      const data = {
+        isSuccess: fields.affectedRows,
+        id: null,
+      };
+      response(500, null, data, "Invalid", res);
+    }
   });
 
 });
 
+app.put("/users", (req, res) => {
+  const {
+    id,
+    access_code,
+    car_id,
+    owner_name,
+    car_unit_name,
+    plate_number,
+    incoming_date,
+    contract_delivery_date,
+  } = req.body;
+
+  const sql = `UPDATE sm_client_access SET owner_name = '${owner_name}', car_unit_name = '${car_unit_name}', plate_number = '${plate_number}', incoming_date = '${incoming_date}', contract_delivery_date = '${contract_delivery_date}' WHERE access_code = '${access_code}' AND car_id = '${car_id}'`;
+
+  db.query(sql, (err, fields) => {
+    console.log(err);
+    if (fields?.affectedRows) {
+      const data = {
+        isSuccess: fields.affectedRows,
+        message: fields.message
+      };
+      response(200, null, data, "DATA SUCCESSFULLY UPDATED!", res);
+    } else {
+      const data = {
+        isSuccess: fields.affectedRows,
+        message: fields.message
+      };
+      response(404, null, data, "User Not Found", res);
+      console.log(fields)
+    }
+  });
+})
+
 app.delete("/users", (req, res) => {
-  
-}) 
+  const { id } = req.body;
+  const sql = `DELETE FROM sm_client_access WHERE id = ${id}`;
+  db.query(sql, (err, fields) => {
+    console.log(err);
+    if (fields?.affectedRows) {
+      const data = {
+        isDeleted: fields.affectedRows,
+      };
+      response(200, null, data, "DATA SUCCESSFULLY DELETED!", res);
+    } else {
+      const data = {
+        isDeleted: fields.affectedRows,
+        id: null,
+      };
+      response(500, null, data, "Invalid", res);
+    }
+  });
+})
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
